@@ -7,7 +7,6 @@ import java.util.Optional;
 
 import javax.validation.Valid;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -23,8 +22,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.formaciondbi.microservicios.app.alumnos.controllers.constantes.ConstantesController;
 import com.formaciondbi.microservicios.app.alumnos.error.AlumnoError;
+import com.formaciondbi.microservicios.app.alumnos.model.mapper.MapperAlumno;
+import com.formaciondbi.microservicios.app.alumnos.model.to.AlumnoTO;
 import com.formaciondbi.microservicios.app.alumnos.servces.IAlumnoService;
 import com.formaciondbi.microservicios.commons.alumnos.model.entity.Alumno;
 import com.formaciondbi.microservicios.commons.controllers.CommonController;
@@ -58,7 +58,7 @@ public class AlumnoController extends CommonController<Alumno, IAlumnoService >{
 	 * @return
 	 */
 	@GetMapping("/uploads/img/{id}")
-	public ResponseEntity<?> verFoto(@PathVariable final Long id){
+	public ResponseEntity verFoto(@PathVariable final Long id){
 		final Optional<Alumno> tmp = this.service.findById(id);
 		if(!tmp.isPresent() || tmp.get().getFoto()==null) {
 			return ResponseEntity.notFound().build();		
@@ -72,12 +72,13 @@ public class AlumnoController extends CommonController<Alumno, IAlumnoService >{
 	 * @param lId
 	 * @return
 	 * @throws AlumnoError 
+	 * if(result.hasErrors()) {
+			return validar(result);
+		}
 	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<?> editar(@Valid @RequestBody final Alumno alumno, BindingResult result, @PathVariable("id")final Long lId) throws AlumnoError{
-		/*if(result.hasErrors()) {
-			return validar(result);
-		}*/
+	public ResponseEntity editar(@Valid @RequestBody final AlumnoTO alumnoTo, BindingResult result, @PathVariable("id")final Long lId) throws AlumnoError{
+		final Alumno alumno = MapperAlumno.convertObjectTOToEntity(alumnoTo);
 		if(alumno.getNombre().isEmpty()) {
 			throw new AlumnoError("El nombre esta vacio!!");
 		}
@@ -99,7 +100,7 @@ public class AlumnoController extends CommonController<Alumno, IAlumnoService >{
 	 * @return
 	 */
 	@GetMapping("/filtrar/{termino}")
-	public ResponseEntity<?> buscarAlumnos(@PathVariable("termino") final String strTermino){
+	public ResponseEntity buscarAlumnos(@PathVariable("termino") final String strTermino){
 		final List<Alumno> lstAlumnos = this.service.findByNombreOrApellido(strTermino);
 		if(lstAlumnos.isEmpty()) {
 			return ResponseEntity.notFound().build();
@@ -117,11 +118,11 @@ public class AlumnoController extends CommonController<Alumno, IAlumnoService >{
 	 * @throws IOException
 	 */
 	@PostMapping("/guardar-con-foto")
-	public ResponseEntity<?> guardarConFoto(@Valid @RequestBody Alumno alumno, BindingResult result, @RequestParam MultipartFile archivo) throws IOException {
+	public ResponseEntity guardarConFoto(@Valid @RequestBody AlumnoTO alumnoTo, BindingResult result, @RequestParam MultipartFile archivo) throws IOException {
+		final Alumno alumno = MapperAlumno.convertObjectTOToEntity(alumnoTo);
 		if(!archivo.isEmpty()) {
 			alumno.setFoto(archivo.getBytes());
 		}
-		System.out.println(alumno.getApellido());
 		return super.guardar(alumno, result);
 	}
 	/**
@@ -135,11 +136,13 @@ public class AlumnoController extends CommonController<Alumno, IAlumnoService >{
 	 * @throws IOException
 	 */
 	@PostMapping("/editar-con-foto/{id}")
-	public ResponseEntity<?> editarConFoto(@Valid @RequestBody final Alumno alumno, BindingResult result, @PathVariable("id")final Long lId
+	public ResponseEntity editarConFoto(@Valid @RequestBody final AlumnoTO alumnoTo, BindingResult result, @PathVariable("id")final Long lId
 			, @RequestParam MultipartFile archivo) throws IOException{
+		final Alumno alumno = MapperAlumno.convertObjectTOToEntity(alumnoTo);
 		if(result.hasErrors()) {
 			return validar(result);
 		}
+		
 		final Optional<Alumno> tmp = this.service.findById(lId);
 		if(tmp.isPresent()) {
 			final Alumno alumnoDb = tmp.get();

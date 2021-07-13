@@ -1,17 +1,11 @@
 package com.formaciondbi.microservicios.app.alumnos.controllers;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.NestedServletException;
 
-import java.beans.PropertyEditor;
-import java.nio.charset.StandardCharsets;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.junit.After;
@@ -30,9 +24,14 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.util.LinkedMultiValueMap;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.formaciondbi.microservicios.app.alumnos.controllers.constantes.ConstantesController;
+import com.formaciondbi.microservicios.app.alumnos.error.AlumnoError;
+import com.formaciondbi.microservicios.app.alumnos.model.mapper.MapperAlumno;
+import com.formaciondbi.microservicios.app.alumnos.model.to.AlumnoTO;
 import com.formaciondbi.microservicios.app.alumnos.servces.IAlumnoService;
 import com.formaciondbi.microservicios.commons.alumnos.model.entity.Alumno;
 
@@ -45,9 +44,9 @@ public class AlumnoControllerTest {
 	private IAlumnoService alumnoService;
 	@InjectMocks
 	private AlumnoController alumnoController;
-	private static Alumno ALUMNOB = new Alumno();
-	private static Alumno ALUMNO_IVAN = new Alumno();
-	private static final Alumno ALUMNO = new Alumno();
+	private static AlumnoTO ALUMNOB = new AlumnoTO();
+	private static AlumnoTO ALUMNO_IVAN = new AlumnoTO();
+	private static final AlumnoTO ALUMNO = new AlumnoTO();
 	private final List<Alumno> lstAlumnos = new ArrayList<>();
 	private ObjectMapper mapper = new ObjectMapper();
 	
@@ -68,7 +67,7 @@ public class AlumnoControllerTest {
 		ALUMNOB.setEmail("ivan.baltierra");
 		ALUMNOB.setId(1L);
 		ALUMNOB.setCreateAt(new Date());
-		this.lstAlumnos.add(ALUMNOB);
+		this.lstAlumnos.add(MapperAlumno.convertObjectTOToEntity( ALUMNOB) );
 		
 		ALUMNO.setApellido("Baltierra");
 		ALUMNO.setCreateAt(new Date());
@@ -115,13 +114,14 @@ public class AlumnoControllerTest {
 	}
 	@Test
 	public void verFotoNotFoundTest() throws JsonProcessingException, Exception {
-		Optional OPTINAL_ALUMNO = Optional.of(ALUMNOB);
+		final Optional OPTINAL_ALUMNO = Optional.empty();//Optional.of(ALUMNOB);
+		ALUMNOB.setFoto(null);
 		Mockito.when(this.alumnoService.findById(1l)).thenReturn(OPTINAL_ALUMNO);
 		
 		/*ResponseEntity alumno = alumnoController.verFoto(1L);
 		assertEquals(alumno.getStatusCode(), HttpStatus.NOT_FOUND);*/
 		this.mockMvc.perform(
-				MockMvcRequestBuilders.get("/uploads/img/{id}" ,2)
+				MockMvcRequestBuilders.get("/uploads/img/{id}" ,ConstantesController.N002)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(mapper.writeValueAsString(ALUMNOB))
 				).andExpect(MockMvcResultMatchers.status().isNotFound()).andDo(MockMvcResultHandlers.print());
@@ -133,11 +133,11 @@ public class AlumnoControllerTest {
 		foto[0]=12;
 		foto[1]=12;
 		ALUMNO_IVAN.setFoto(foto);
-		Optional OPTINAL_ALUMNO = Optional.of(ALUMNO_IVAN);
+		final Optional OPTINAL_ALUMNO = Optional.of( MapperAlumno.convertObjectTOToEntity( ALUMNO_IVAN) );
 		Mockito.when(this.alumnoService.findById(Mockito.anyLong())).thenReturn(OPTINAL_ALUMNO);
 		
 		this.mockMvc.perform(
-				MockMvcRequestBuilders.get("/uploads/img/{id}", 2)
+				MockMvcRequestBuilders.get("/uploads/img/{id}", ConstantesController.N002)
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(mapper.writeValueAsString(ALUMNOB))
 				
@@ -146,44 +146,44 @@ public class AlumnoControllerTest {
 	
 	@Test(expected = NestedServletException.class)
 	public void editarBadRequestTest() throws Exception {
-		Optional OPTINAL_ALUMNO = Optional.of(ALUMNOB);
+		final Optional OPTINAL_ALUMNO = Optional.of(MapperAlumno.convertObjectTOToEntity(ALUMNOB));
 		Mockito.when(alumnoService.findById( Mockito.anyLong() )).thenReturn(OPTINAL_ALUMNO);
-		//System.out.println(alumnoController.editar(ALUMNOB, Mockito.any(), 2l));
 		ALUMNOB.setNombre("");
 		this.mockMvc.perform(
 				MockMvcRequestBuilders.put("/{id}" ,2)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(ALUMNOB))
-				).andExpect(MockMvcResultMatchers.status().isOk()).andDo(MockMvcResultHandlers.print());
+				.content(mapper.writeValueAsString( ALUMNOB  ))
+				).andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 	}
 	@Test
 	public void editarTest() throws Exception {
 		
-		Optional OPTINAL_ALUMNO = Optional.of(ALUMNO);
+		final Optional OPTINAL_ALUMNO = Optional.of(MapperAlumno.convertObjectTOToEntity(ALUMNO) );
 		Mockito.when(alumnoService.findById( Mockito.anyLong() )).thenReturn(OPTINAL_ALUMNO);
-		
 		this.mockMvc.perform(
-				MockMvcRequestBuilders.put("/{id}" ,2)
+				MockMvcRequestBuilders.put("/{id}" ,ConstantesController.N002)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(ALUMNO))
+				.content(mapper.writeValueAsString(  ALUMNOB  ))
 				).andExpect(MockMvcResultMatchers.status().isCreated()).andDo(MockMvcResultHandlers.print());
 	}
+	
 	@Test
 	public void editarNotFoundTest() throws Exception {
 		
-		Optional OPTINAL_ALUMNO = Optional.empty();
+		final Optional OPTINAL_ALUMNO = Optional.empty();
 		Mockito.when(alumnoService.findById( Mockito.anyLong() )).thenReturn(OPTINAL_ALUMNO);
 		
 		this.mockMvc.perform(
-				MockMvcRequestBuilders.put("/{id}" ,2)
+				MockMvcRequestBuilders.put("/{id}" ,ConstantesController.N002)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(ALUMNO))
+				.content(mapper.writeValueAsString(  ALUMNOB  ))
 				).andExpect(MockMvcResultMatchers.status().isNotFound()).andDo(MockMvcResultHandlers.print());
 	}
 	@Test
 	public void guardarConFotoTest() throws JsonProcessingException, Exception {
 			
-		Mockito.when(alumnoService.guardar(ALUMNO )).thenReturn(ALUMNO);
+		Mockito.when(alumnoService.guardar( MapperAlumno.convertObjectTOToEntity( ALUMNO ) ))
+			.thenReturn(MapperAlumno.convertObjectTOToEntity( ALUMNO ));
 		
 		MockMultipartFile file = new MockMultipartFile(
 	        "archivo", 
@@ -197,9 +197,11 @@ public class AlumnoControllerTest {
 		.andExpect(MockMvcResultMatchers.status().isCreated()).andDo(MockMvcResultHandlers.print());
 	}
 	@Test
-	public void guardarConFotoBadRequestTest() throws JsonProcessingException, Exception {			
-		Mockito.when(alumnoService.guardar(ALUMNO )).thenReturn(ALUMNO);
+	public void guardarConFotoBadRequestTest() throws JsonProcessingException, Exception {	
 		ALUMNO.setNombre(String.valueOf(""));
+		Mockito.when(alumnoService.guardar(MapperAlumno.convertObjectTOToEntity( ALUMNO ) ))
+		.thenReturn(MapperAlumno.convertObjectTOToEntity( ALUMNO ));
+		
 		MockMultipartFile file = new MockMultipartFile(
 	        "archivo", 
 	        "hello.txt", 
@@ -208,52 +210,57 @@ public class AlumnoControllerTest {
 	      );
 		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/guardar-con-foto").file(file)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content( mapper.writeValueAsString(ALUMNO) ))
+				.content( mapper.writeValueAsString( ALUMNO ) ))
 		.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 	}
 	@Test
 	public void editarConFotoTest() throws JsonProcessingException, Exception{		
-		ALUMNO.setNombre("Ivan");
-		ALUMNO.setId(1l);
+		ALUMNOB.setNombre("Ivan");
+		ALUMNOB.setApellido("Baltierra");
+		ALUMNOB.setId(1l);
+		ALUMNOB.setEmail("ivan@gmail.com");
 		
-		Optional OPTINAL_ALUMNO = Optional.of(ALUMNO);
+		final Optional OPTINAL_ALUMNO = Optional.of(MapperAlumno.convertObjectTOToEntity( ALUMNOB ) );
 		Mockito.when(alumnoService.findById( Mockito.anyLong() )).thenReturn(OPTINAL_ALUMNO);			
 		
-		MockMultipartFile file = new MockMultipartFile(
+		final MockMultipartFile file = new MockMultipartFile(
 	        "archivo", 
 	        "hello.txt", 
 	        MediaType.TEXT_PLAIN_VALUE, 
 	        "Hello, World!".getBytes()
 	      );
-		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/editar-con-foto/{id}", 1).file(file)				
+		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/editar-con-foto/{id}", ConstantesController.N001).file(file)				
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(ALUMNO))
+				.content(mapper.writeValueAsString(  ALUMNOB ))
 				)
 		.andExpect(MockMvcResultMatchers.status().isCreated()).andDo(MockMvcResultHandlers.print());
 	}
 	@Test
 	public void editarConFotoBadRequestTest() throws JsonProcessingException, Exception{
-		ALUMNO.setId(1l);
+		ALUMNOB.setId(1l);
+		ALUMNOB.setNombre(String.valueOf(""));
 		
-		Optional OPTINAL_ALUMNO = Optional.of(ALUMNO);
+		final Optional OPTINAL_ALUMNO = Optional.of(MapperAlumno.convertObjectTOToEntity(ALUMNOB) );
 		Mockito.when(alumnoService.findById( Mockito.anyLong() )).thenReturn(OPTINAL_ALUMNO);			
-		ALUMNO.setNombre(String.valueOf(""));
+		
 		MockMultipartFile file = new MockMultipartFile(
 	        "archivo", 
 	        "hello.txt", 
 	        MediaType.TEXT_PLAIN_VALUE, 
 	        "Hello, World!".getBytes()
 	      );
-		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/editar-con-foto/{id}", 1).file(file)				
+		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/editar-con-foto/{id}", ConstantesController.N001).file(file)				
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(ALUMNO))
+				.content(mapper.writeValueAsString(  ALUMNOB ))
 				)
 		.andExpect(MockMvcResultMatchers.status().isBadRequest()).andDo(MockMvcResultHandlers.print());
 	}
 	@Test
 	public void editarConFotoNotFoundTest() throws JsonProcessingException, Exception{
 		ALUMNO.setNombre("Ivan");
-		Optional OPTINAL_ALUMNO = Optional.empty();
+		ALUMNO.setApellido("Baltierra");
+		ALUMNO.setEmail("ivan@gmail.com");
+		final Optional OPTINAL_ALUMNO = Optional.empty();
 		Mockito.when(alumnoService.findById( Mockito.anyLong() )).thenReturn(OPTINAL_ALUMNO);	
 		MockMultipartFile file = new MockMultipartFile(
 	        "archivo", 
@@ -261,9 +268,9 @@ public class AlumnoControllerTest {
 	        MediaType.TEXT_PLAIN_VALUE, 
 	        "Hello, World!".getBytes()
 	      );
-		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/editar-con-foto/{id}", 1).file(file)				
+		this.mockMvc.perform(MockMvcRequestBuilders.multipart("/editar-con-foto/{id}", ConstantesController.N001).file(file)				
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(mapper.writeValueAsString(ALUMNO))
+				.content(mapper.writeValueAsString( ALUMNO ))
 				)
 		.andExpect(MockMvcResultMatchers.status().isNotFound()).andDo(MockMvcResultHandlers.print());
 	}

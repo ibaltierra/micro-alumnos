@@ -18,6 +18,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.formaciondbi.microservicios.app.alumnos.client.CursoFeignClient;
+import com.formaciondbi.microservicios.app.alumnos.controllers.constantes.ConstantesController;
 import com.formaciondbi.microservicios.app.alumnos.model.repository.AlumnoRepositoty;
 import com.formaciondbi.microservicios.commons.alumnos.model.entity.Alumno;
 
@@ -52,7 +53,7 @@ public class AlumnoServiceTest {
 	public void findByNombreOrApellidoTest() {
 		final List<Alumno> lstOutCome = this.alumnoService.findByNombreOrApellido(Mockito.anyString());
 		assertNotNull(lstOutCome);
-		assertEquals(lstOutCome.size(), 2);
+		assertEquals(ConstantesController.N002, lstOutCome.size());
 		assertFalse(lstOutCome.isEmpty());
 	}	
 	@Test
@@ -60,7 +61,7 @@ public class AlumnoServiceTest {
 		Mockito.when(repository.findAllById(lstIds)).thenReturn(lstAlumnosReturn);
 		
 		final List<Alumno> lstOutCome = this.alumnoService.findAllById(lstIds);
-		//assertNotNull(lstOutCome);
+		assertNotNull(lstOutCome);
 		//assertEquals(lstOutCome.size(), 0);
 		//assertFalse(!lstOutCome.isEmpty());
 	}

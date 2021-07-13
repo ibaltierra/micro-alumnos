@@ -12,7 +12,7 @@ public class AlumnosControllerExceptionHandler {
 
 	@ExceptionHandler(AlumnoError.class)
 	@ResponseStatus(value = HttpStatus.BAD_REQUEST)
-	public ResponseEntity<?> resourceBadRequestException(AlumnoError ex, WebRequest request) {
+	public ResponseEntity resourceBadRequestException(AlumnoError ex, WebRequest request) {
 		ErrorResponse message = new ErrorResponse();
 		message.setMessage(ex.getMessage());
 	    message.setStatus(HttpStatus.BAD_REQUEST.toString());
